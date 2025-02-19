@@ -1,8 +1,20 @@
+from celery import Celery
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.video_transcription import VideoTranscription
 from sqlalchemy.future import select
 import os
 
+REDIS_BROKER = os.getenv("REDIS_BROKER", "redis://localhost:6379/0")
+REDIS_BACKEND = os.getenv("REDIS_BACKEND", "redis://localhost:6379/0")
+
+# Configure Celery
+celery_app = Celery(
+    "worker",
+    backend=REDIS_BACKEND,
+    broker=REDIS_BROKER
+)
+
+@celery_app.task
 async def fetch_or_generate_transcript_with_whisper(video_url: str, db: AsyncSession, output_dir: str = "./"):
     video_id = video_url.split("v=")[-1]
     audio_path = os.path.join(output_dir, f"{video_id}.wav")
