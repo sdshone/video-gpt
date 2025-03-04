@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String
-from db import Base
 from passlib.context import CryptContext
+from sqlalchemy import Column, Integer, String
+
+from db import Base
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 class User(Base):
     __tablename__ = "users"

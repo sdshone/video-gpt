@@ -1,8 +1,8 @@
-import os
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import AsyncAdaptedQueuePool
-from models import Base
+
 from config import get_settings
+from models import Base
 
 settings = get_settings()
 
@@ -22,18 +22,20 @@ engine: AsyncEngine = create_async_engine(
         "command_timeout": settings.API_TIMEOUT,
         "server_settings": {
             "statement_timeout": f"{settings.API_TIMEOUT * 1000}",
-            "idle_in_transaction_session_timeout": f"{settings.API_TIMEOUT * 1000}"
-        }
-    }
+            "idle_in_transaction_session_timeout": f"{settings.API_TIMEOUT * 1000}",
+        },
+    },
 )
 
 async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
+
 
 async def init_db():
     async with engine.begin() as conn:
         # Create QueryInteraction table if it doesn't exist
         # This won't drop existing tables
         await conn.run_sync(Base.metadata.create_all)
+
 
 async def get_db():
     async with async_session() as session:

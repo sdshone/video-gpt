@@ -1,12 +1,12 @@
-from pydantic_settings import BaseSettings
-from typing import Optional
-import logging
-from functools import lru_cache
-from dotenv import load_dotenv
 import os
+from functools import lru_cache
+
+from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
 
 # Load .env file explicitly
 load_dotenv()
+
 
 class Settings(BaseSettings):
     # Database settings
@@ -41,6 +41,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings() 
+    return Settings()

@@ -1,8 +1,9 @@
-import os
 import logging
+import os
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
+
 
 class ResourceCleaner:
     def __init__(self, temp_dir: str, max_age_hours: int = 24):
@@ -23,4 +24,4 @@ class ResourceCleaner:
                     except OSError as e:
                         logger.error(f"Failed to delete {filepath}: {e}")
         except Exception as e:
-            logger.error(f"Error during temp file cleanup: {e}") 
+            logger.error(f"Error during temp file cleanup: {e}")

@@ -1,15 +1,17 @@
-import os
-from typing import Optional
-from fastapi import HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from models.user import User
-from passlib.context import CryptContext
-import jwt
-from datetime import datetime, timedelta
-from config import get_settings
 import logging
+import os
+from datetime import datetime, timedelta
+from typing import Optional
+
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from config import get_settings
+from models.user import User
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -21,8 +23,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
+
 def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
+
 
 def create_user(db: Session, username: str, email: str, password: str):
     hashed_password = pwd_context.hash(password)
@@ -32,8 +36,10 @@ def create_user(db: Session, username: str, email: str, password: str):
     db.refresh(db_user)
     return db_user
 
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -45,6 +51,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
+
 # Function to extract user from JWT token
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -54,9 +61,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(
-            token, 
-            settings.JWT_SECRET, 
-            algorithms=[settings.JWT_ALGORITHM]
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
         username: str = payload.get("sub")
         if username is None:

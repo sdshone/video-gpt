@@ -1,33 +1,30 @@
-from fastapi import FastAPI, HTTPException
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from routes import query, auth, transcript
-from dotenv import load_dotenv
-from db import init_db
 import logging
-from utils.cleanup import ResourceCleaner
 import tempfile
-from fastapi.middleware.cors import CORSMiddleware
-from config import get_settings
 from datetime import datetime
+
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import text
-from db import engine
+
+from config import get_settings
+from db import engine, init_db
+from routes import auth, query, transcript, video_history, videos
+from utils.cleanup import ResourceCleaner
 
 settings = get_settings()
 
 # Configure logging
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
-    format=settings.LOG_FORMAT
+    level=getattr(logging, settings.LOG_LEVEL), format=settings.LOG_FORMAT
 )
 logger = logging.getLogger(__name__)
 
 # Initialize rate limiter
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[settings.API_RATE_LIMIT]
-)
+limiter = Limiter(key_func=get_remote_address, default_limits=[settings.API_RATE_LIMIT])
 app = FastAPI()
 
 # Configure CORS
@@ -47,12 +44,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(query.router, prefix="/query")
 app.include_router(auth.router, prefix="/auth")
 app.include_router(transcript.router, prefix="/transcript")
+app.include_router(video_history.router)
+app.include_router(videos.router, prefix="/videos")
 
 # Load environment variables
 load_dotenv()
 
 # Initialize resource cleaner
 temp_cleaner = ResourceCleaner(tempfile.gettempdir())
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -65,6 +65,7 @@ async def startup_event():
         logger.error(f"Error creating database tables: {e}")
         raise
 
+
 @app.on_event("shutdown")
 async def shutdown_event():
     try:
@@ -76,6 +77,7 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"Shutdown cleanup failed: {e}")
 
+
 @app.get("/health")
 async def health_check():
     try:
@@ -85,12 +87,12 @@ async def health_check():
         return {
             "status": "healthy",
             "database": "connected",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return {
             "status": "unhealthy",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
