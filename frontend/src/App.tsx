@@ -1,37 +1,39 @@
-import React, { useState } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Toaster } from 'react-hot-toast';
-import Login from './components/Login';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './components/LoginPage';
 import VideoTranscriber from './components/VideoTranscriber';
-import toast from 'react-hot-toast';
-
-const queryClient = new QueryClient();
+import { useEffect, useState } from 'react';
+import Register from './components/Register';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem('token')
-  );
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    queryClient.clear(); // Clear any cached queries
-    toast.success('Logged out successfully');
-  };
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-100">
-        <div className="max-w-4xl mx-auto p-4">
-          {!isAuthenticated ? (
-            <Login onSuccess={() => setIsAuthenticated(true)} />
-          ) : (
-            <VideoTranscriber onLogout={handleLogout} />
-          )}
-        </div>
-      </div>
-      <Toaster />
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? 
+              <Navigate to="/" replace /> : 
+              <LoginPage />
+          } 
+        />
+        <Route 
+          path="/" 
+          element={
+            isAuthenticated ? 
+              <VideoTranscriber /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </Router>
   );
 }
 
